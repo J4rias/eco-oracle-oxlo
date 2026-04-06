@@ -1,6 +1,7 @@
 """Node 5 — Audit Finalizer: assembles the ComplianceResponse and persists to Supabase."""
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import logging
@@ -18,6 +19,12 @@ from schemas.outputs import (
 from services.supabase_client import SupabaseService
 
 logger = logging.getLogger(__name__)
+
+# ── In-Memory Certificate Cache ────────────────────────────────────────────────
+# Keyed by audit_hash → ComplianceResponse, used for lazy PDF generation.
+# Acceptable for MVP; replace with Redis for production multi-worker setups.
+_CERTIFICATE_CACHE: dict[str, "ComplianceResponse"] = {}
+_MAX_CACHE_SIZE = 50  # Keep last N reports in memory
 
 
 def audit_finalizer(state: AgentState) -> AgentState:
@@ -54,13 +61,23 @@ def audit_finalizer(state: AgentState) -> AgentState:
         reported_tons=metadata.reported_tons,
     )
 
+    def to_data_url(data: bytes | None, mime: str = "image/png") -> str | None:
+        if not data:
+            return None
+        encoded = base64.b64encode(data).decode("utf-8")
+        return f"data:{mime};base64,{encoded}"
+
     # ── Build evidence bundle ──────────────────────────────────────────────────
     evidence = EvidenceBundle(
-        sentinel_image_url=None,       # Would be a signed URL to cloud storage in production
-        detection_overlay_url=None,    # Overlay image with YOLOv9 bounding boxes
-        ndvi_image_url=None,
+        sentinel_image_url=to_data_url(state.get("satellite_rgb_bytes")),
+        detection_overlay_url=to_data_url(state.get("satellite_swir_bytes")),
+        ndvi_image_url=to_data_url(state.get("satellite_ndvi_bytes")),
+        ndmi_image_url=to_data_url(state.get("satellite_ndmi_bytes")),
         acquisition_date=state.get("acquisition_date"),
         cloud_cover_pct=state.get("cloud_cover_pct"),
+        bounding_box=state.get("bounding_box"),
+        centroid=state.get("centroid"),
+        ndmi_stats=state.get("ndmi_stats"),
     )
 
     # ── Generate audit hash ────────────────────────────────────────────────────
@@ -86,6 +103,15 @@ def audit_finalizer(state: AgentState) -> AgentState:
         "[audit_finalizer] Done — verdict=%s  risk=%d  stored=%s",
         verdict_str, risk_score, audit_stored,
     )
+
+    # ── Populate in-memory cache for lazy PDF generation ──────────────────────
+    if len(_CERTIFICATE_CACHE) >= _MAX_CACHE_SIZE:
+        # Evict oldest entry (FIFO)
+        evict_key = next(iter(_CERTIFICATE_CACHE))
+        del _CERTIFICATE_CACHE[evict_key]
+        logger.debug("[audit_finalizer] Cache evicted oldest entry: %s", evict_key[:16])
+    _CERTIFICATE_CACHE[audit_hash] = final_response
+    logger.info("[audit_finalizer] Cached report for certificate generation: %s", audit_hash[:16])
 
     return {
         **state,

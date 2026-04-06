@@ -69,8 +69,13 @@ class EvidenceBundle(BaseModel):
     sentinel_image_url: Optional[str] = None
     detection_overlay_url: Optional[str] = None
     ndvi_image_url: Optional[str] = None
+    ndmi_image_url: Optional[str] = None
     acquisition_date: Optional[date] = None
     cloud_cover_pct: Optional[float] = None
+    # Geo-spatial context
+    bounding_box: Optional[list[float]] = None       # [west, south, east, north]
+    centroid: Optional[tuple[float, float]] = None   # (lon, lat)
+    ndmi_stats: Optional[dict[str, float | str]] = None  # mean, status
 
 
 class ComplianceResponse(BaseModel):

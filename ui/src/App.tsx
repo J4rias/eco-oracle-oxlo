@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Container, Text, Paper, Transition, Flex } from '@mantine/core';
+import { Container, Text, Paper, Transition, Flex, Group, Center, Stack } from '@mantine/core';
+import { IconLeaf } from '@tabler/icons-react';
 import { Toaster, toast } from 'sonner';
 import { InputSection } from './components/InputSection';
 import { AnalysisDashboard } from './components/AnalysisDashboard';
@@ -52,7 +53,6 @@ export function App() {
       return finalData;
     },
     onSuccess: (data) => {
-      console.log('[EcoOracle] Final report payload:', JSON.stringify(data, null, 2));
       setReport(data);
       setActiveStage(null);
       toast.success('Compliance analysis completed successfully.');
@@ -84,10 +84,26 @@ export function App() {
       <Container size="xl">
         <Flex direction="column" gap="xl">
           <header>
-            <Text component="h1" size="3rem" fw={900} variant="gradient" gradient={{ from: 'teal', to: 'green', deg: 90 }}>
-              EcoOracle
-            </Text>
-            <Text color="dimmed" size="lg">Geographic Intelligence & EUDR Compliance Agent</Text>
+            <Center mb="xs">
+              <Stack align="center" gap="xs">
+                <Group gap="md" align="center">
+                  <IconLeaf size={58} color="#3FB950" stroke={2.5} />
+                  <Text 
+                    component="h1" 
+                    size="4.5rem" 
+                    fw={900} 
+                    variant="gradient" 
+                    gradient={{ from: 'teal', to: 'green', deg: 90 }}
+                    style={{ letterSpacing: '-0.02em', lineHeight: 1 }}
+                  >
+                    EcoOracle
+                  </Text>
+                </Group>
+                <Text color="dimmed" size="lg" ta="center" fw={500}>
+                  Geographic Intelligence & EUDR Compliance Agent
+                </Text>
+              </Stack>
+            </Center>
           </header>
 
           <main>

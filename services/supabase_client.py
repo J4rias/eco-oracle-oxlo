@@ -131,6 +131,7 @@ class SupabaseService:
             logger.error("Failed to generate embeddings from Oxlo: %s. Using mock.", exc)
             return mock_embedding
 
+
     def _mock_rag_context(self) -> list[str]:
         """Hardcoded EUDR law excerpts for development / testing."""
         return [

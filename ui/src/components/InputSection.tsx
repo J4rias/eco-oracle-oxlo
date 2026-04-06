@@ -18,7 +18,7 @@ const schema = z.object({
   reported_tons: z.number().positive('Must be greater than 0')
 });
 
-type FormValues = z.infer<typeof schema>;
+
 
 interface InputSectionProps {
   onSubmit: (file: File, metadata: any) => void;

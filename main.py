@@ -9,7 +9,7 @@ from typing import Annotated
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from agents.agent_manager import run_compliance_check, stream_compliance_check
 from core.config import settings
@@ -228,3 +228,109 @@ async def get_compliance_report(report_id: str):
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=str(exc))
+
+
+@app.get(
+    "/api/v1/compliance/certificate/{audit_hash}",
+    tags=["Compliance"],
+    summary="Lazily generate and download the EUDR Compliance Certificate PDF",
+)
+async def download_certificate(audit_hash: str):
+    """
+    Generates a EUDR Compliance Certificate PDF on demand for the given audit_hash.
+    The report must have been generated in the current server session (in-memory cache).
+    Returns a PDF file as a streaming download.
+    """
+    from agents.nodes.audit_finalizer import _CERTIFICATE_CACHE
+    from services.certificate_service import generate_certificate
+
+    cached_response = _CERTIFICATE_CACHE.get(audit_hash)
+    if not cached_response:
+        raise HTTPException(
+            status_code=404,
+            detail=(
+                f"Certificate data not found for hash {audit_hash[:16]}... "
+                "The report may have expired from cache. Please run a new analysis."
+            ),
+        )
+
+    logger.info("Generating certificate PDF for audit_hash=%s", audit_hash[:16])
+    try:
+        pdf_bytes = generate_certificate(cached_response)
+    except Exception as exc:
+        logger.exception("Certificate generation failed")
+        raise HTTPException(status_code=500, detail=f"Certificate generation failed: {exc}")
+
+    filename = f"EcoOracle_Certificate_{cached_response.report.invoice_id}_{audit_hash[:8]}.pdf"
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@app.get(
+    "/api/v1/compliance/verify/{audit_hash}",
+    tags=["Compliance"],
+    summary="Public verification endpoint — confirm authenticity of an EcoOracle certificate",
+)
+async def verify_certificate(audit_hash: str):
+    """
+    Public endpoint to verify the authenticity of an EcoOracle certificate.
+    Returns minimal, non-sensitive verification data (Option A: Verification Seal).
+    """
+    from agents.nodes.audit_finalizer import _CERTIFICATE_CACHE
+
+    cached = _CERTIFICATE_CACHE.get(audit_hash)
+    if cached:
+        r = cached.report
+        verdict = r.verdict.value if hasattr(r.verdict, "value") else str(r.verdict)
+        return {
+            "verified": True,
+            "audit_hash": audit_hash,
+            "invoice_id": r.invoice_id,
+            "commodity": r.crop_type,
+            "verdict": verdict,
+            "issued_at": r.created_at.isoformat() if r.created_at else None,
+            "issuer": "EcoOracle Certification Authority",
+        }
+
+    # Fallback: try Supabase if not in cache (server may have restarted)
+    if settings.supabase_configured:
+        try:
+            from services.supabase_client import SupabaseService
+            svc = SupabaseService()
+            result = (
+                svc._client.table("compliance_audits")
+                .select("audit_hash,invoice_id,crop_type,verdict,created_at")
+                .eq("audit_hash", audit_hash)
+                .single()
+                .execute()
+            )
+            if result.data:
+                d = result.data
+                return {
+                    "verified": True,
+                    "audit_hash": audit_hash,
+                    "invoice_id": d.get("invoice_id"),
+                    "commodity": d.get("crop_type"),
+                    "verdict": d.get("verdict"),
+                    "issued_at": d.get("created_at"),
+                    "issuer": "EcoOracle Certification Authority",
+                }
+        except Exception:
+            pass
+
+    raise HTTPException(
+        status_code=404,
+        detail={
+            "verified": False,
+            "audit_hash": audit_hash,
+            "message": "No certificate found for this hash. It may be invalid or expired.",
+        },
+    )
+
+@app.get("/debug/cache")
+def debug_cache():
+    from agents.nodes.audit_finalizer import _CERTIFICATE_CACHE
+    return {"keys": list(_CERTIFICATE_CACHE.keys())}
