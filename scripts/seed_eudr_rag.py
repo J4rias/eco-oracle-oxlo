@@ -47,7 +47,7 @@ def generate_embedding(text: str) -> list[float]:
         "input": text
     }
     
-    with httpx.Client(timeout=15.0) as client:
+    with httpx.Client(timeout=60.0) as client:
         res = client.post(url, headers=headers, json=payload)
         res.raise_for_status()
         data = res.json()

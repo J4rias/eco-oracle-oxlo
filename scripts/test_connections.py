@@ -73,7 +73,7 @@ def test_oxlo():
         print(f"  Base URL  : {settings.oxlo_base_url}")
 
         # Minimal connectivity check (HEAD on base URL, or GET /health if available)
-        with httpx.Client(timeout=10.0) as client:
+        with httpx.Client(timeout=30.0) as client:
             resp = client.get(
                 settings.oxlo_base_url,
                 headers={"Authorization": f"Bearer {settings.oxlo_api_key}"},

@@ -21,8 +21,11 @@ class AgentState(TypedDict, total=False):
     # ── Satellite stage ────────────────────────────────────────────────────────
     satellite_rgb_bytes: bytes            # PNG/TIFF of the RGB composite
     satellite_ndvi_bytes: Optional[bytes] # NDVI band (greyscale)
+    satellite_ndmi_bytes: Optional[bytes] # NDMI band (moisture index)
+    satellite_swir_bytes: Optional[bytes] # SWIR band (B11)
     acquisition_date: Optional[date]      # Date of the best scene found
     cloud_cover_pct: Optional[float]
+    ndmi_stats: Optional[dict[str, float]] # mean, min, max, etc.
 
     # ── Vision stage ──────────────────────────────────────────────────────────
     vision_report: Optional[VisionReport]

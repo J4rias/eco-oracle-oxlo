@@ -25,17 +25,21 @@ def vision_analyzer(state: AgentState) -> AgentState:
     """
     logger.info("[vision_analyzer] Starting deforestation detection")
 
-    rgb_bytes = state.get("satellite_rgb_bytes")
-    if not rgb_bytes:
-        raise OxloAPIError("satellite_rgb_bytes missing from state — run satellite_fetcher first")
+    swir_bytes = state.get("satellite_swir_bytes")
+    # Fallback to RGB if SWIR is missing (e.g. from a previous state or mock run)
+    image_to_analyze = swir_bytes if swir_bytes else state.get("satellite_rgb_bytes")
+    
+    if not image_to_analyze:
+        raise OxloAPIError("satellite_swir_bytes / rgb_bytes missing from state")
 
     client = OxloVisionClient()
 
     if settings.oxlo_configured:
-        vision_report = client.analyze(image_bytes=rgb_bytes, image_name="sentinel_rgb.png")
+        # Use SWIR for high-fidelity change detection
+        vision_report = client.analyze(image_bytes=image_to_analyze, image_name="sentinel_swir.png")
     else:
         logger.warning("[vision_analyzer] OXLO_API_KEY not set — using mock vision response")
-        vision_report = client.analyze_mock(image_bytes=rgb_bytes)
+        vision_report = client.analyze_mock(image_bytes=image_to_analyze)
 
     # ── Business Rule: confidence threshold ───────────────────────────────────
     requires_review = vision_report.deforestation_detected and (vision_report.max_confidence < settings.confidence_threshold)

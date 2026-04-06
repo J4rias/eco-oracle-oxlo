@@ -61,11 +61,39 @@ function evaluatePixel(sample) {
 }
 """
 
+_EVALSCRIPT_NDMI = """
+//VERSION=3
+function setup() {
+    return {
+        input: [{ bands: ["B08", "B11"] }],
+        output: { bands: 1, sampleType: "FLOAT32" }
+    };
+}
+function evaluatePixel(sample) {
+    return [(sample.B08 - sample.B11) / (sample.B08 + sample.B11 + 0.0001)];
+}
+"""
+
+_EVALSCRIPT_SWIR = """
+//VERSION=3
+function setup() {
+    return {
+        input: [{ bands: ["B11"] }],
+        output: { bands: 1 }
+    };
+}
+function evaluatePixel(sample) {
+    return [sample.B11 * 2.5];
+}
+"""
+
 
 @dataclass
 class SentinelImagery:
     rgb_bytes: bytes
     ndvi_bytes: Optional[bytes]
+    ndmi_bytes: Optional[bytes]
+    swir_bytes: Optional[bytes]
     acquisition_date: Optional[date]
     cloud_cover_pct: Optional[float]
     bbox: list[float]
@@ -100,25 +128,14 @@ class SentinelHubService:
 
     # ── Public API ─────────────────────────────────────────────────────────────
 
-    def fetch_rgb_ndvi(
+    def fetch_compliance_imagery(
         self,
         bbox_coords: list[float],
         time_range: tuple[str, str],
     ) -> SentinelImagery:
         """
-        Download the best (lowest cloud cover) Sentinel-2 L2A scene for `bbox_coords`
-        in `time_range`. Returns RGB and NDVI as PNG bytes.
-
-        Args:
-            bbox_coords: [west, south, east, north] in WGS84.
-            time_range: ("YYYY-MM-DD", "YYYY-MM-DD") start/end.
-
-        Returns:
-            SentinelImagery dataclass with image bytes and metadata.
-
-        Raises:
-            SatelliteRateLimitError: if 429 persists after 5 retries.
-            SatelliteFetchError: for any other acquisition failure.
+        Download the best Sentinel-2 L2A scene for `bbox_coords` in `time_range`.
+        Acquires RGB, NDVI, NDMI (Moisture Index), and SWIR layers.
         """
         try:
             best_scene = self._find_best_scene(bbox_coords, time_range)
@@ -135,24 +152,20 @@ class SentinelHubService:
             bbox = BBox(bbox=bbox_coords, crs=CRS.WGS84)
             size = bbox_to_dimensions(bbox, resolution=self.RESOLUTION_M)
 
-            rgb_bytes = self._download_band(
-                bbox=bbox,
-                size=size,
-                evalscript=_EVALSCRIPT_RGB,
-                time_interval=time_range,
-                mime_type=MimeType.PNG,
-            )
-            ndvi_bytes = self._download_band(
-                bbox=bbox,
-                size=size,
-                evalscript=_EVALSCRIPT_NDVI,
-                time_interval=time_range,
-                mime_type=MimeType.TIFF,
-            )
+            # RGB for reference
+            rgb_bytes = self._download_band(bbox, size, _EVALSCRIPT_RGB, time_range, MimeType.PNG)
+            # NDVI for biomass
+            ndvi_bytes = self._download_band(bbox, size, _EVALSCRIPT_NDVI, time_range, MimeType.TIFF)
+            # NDMI for moisture / stress
+            ndmi_bytes = self._download_band(bbox, size, _EVALSCRIPT_NDMI, time_range, MimeType.TIFF)
+            # SWIR for Vision AI
+            swir_bytes = self._download_band(bbox, size, _EVALSCRIPT_SWIR, time_range, MimeType.PNG)
 
             return SentinelImagery(
                 rgb_bytes=rgb_bytes,
                 ndvi_bytes=ndvi_bytes,
+                ndmi_bytes=ndmi_bytes,
+                swir_bytes=swir_bytes,
                 acquisition_date=date.fromisoformat(scene_date) if scene_date else None,
                 cloud_cover_pct=cloud_cover,
                 bbox=bbox_coords,

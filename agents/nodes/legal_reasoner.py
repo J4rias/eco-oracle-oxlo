@@ -29,7 +29,10 @@ _SYSTEM_PROMPT = (
     "You are an expert EU Deforestation Regulation (EUDR) compliance officer. "
     "You reason strictly based on Regulation (EU) 2023/1115. "
     "Always cite specific articles. Respond in English. "
-    "Format your response as Markdown."
+    "Format your response as Markdown. "
+    "Expert Knowledge: Low NDMI (Moisture Index < 0.2) combined with Low NDVI indicates bare soil or forest clearing. "
+    "High NDVI + Low NDMI suggests healthy but water-stressed crops (common in legal management/pruning). "
+    "Always differentiate based on these indices to avoid false positives for deforestation."
 )
 
 
@@ -98,6 +101,7 @@ def legal_reasoner(state: AgentState) -> AgentState:
         volume_notes=volume_notes,
         post_cutoff=post_cutoff_deforestation,
         requires_review=state.get("requires_human_review", False),
+        ndmi_stats=state.get("ndmi_stats"),
     )
 
     # ── Call DeepSeek R1 ───────────────────────────────────────────────────────
@@ -177,8 +181,10 @@ def _build_prompt(
     volume_notes: str,
     post_cutoff: bool,
     requires_review: bool,
+    ndmi_stats: dict | None = None,
 ) -> str:
     rag_text = "\n\n".join(f"• {chunk}" for chunk in rag_chunks) or "No RAG context available."
+    moisture_text = f"Mean NDMI: {ndmi_stats.get('mean', 'N/A')} ({ndmi_stats.get('status', 'Unknown')})" if ndmi_stats else "Data unavailable"
     return f"""
 ## EUDR Compliance Analysis Request
 
@@ -203,6 +209,10 @@ def _build_prompt(
 
 ### Human Review Required
 {requires_review} (confidence below threshold)
+
+### Moisture & Stress Analysis (NDMI)
+**{moisture_text}**
+(B8-B11)/(B8+B11) indicates water content in vegetation. Use this to differentiate pruning from logging.
 
 ### Relevant EUDR Regulation Excerpts (RAG)
 {rag_text}

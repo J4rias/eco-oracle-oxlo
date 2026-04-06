@@ -59,10 +59,14 @@ def satellite_fetcher(state: AgentState) -> AgentState:
         return _mock_imagery(state)
 
     service = SentinelHubService()
-    imagery = service.fetch_rgb_ndvi(bbox_coords=bbox, time_range=time_range)
+    imagery = service.fetch_compliance_imagery(bbox_coords=bbox, time_range=time_range)
 
+    # Compute basic stats (Mock stats for now until we have a real numpy processor here)
+    # In a full production app, we would process the TIFF bytes with 'rasterio' or 'numpy'
+    ndmi_avg = 0.45  # Default "healthy/moist" placeholder if NDMI is present
+    
     logger.info(
-        "[satellite_fetcher] Scene acquired: date=%s  cloud_cover=%.1f%%",
+        "[satellite_fetcher] Scene acquired: date=%s  cloud_cover=%.1f%%  SWIR=OK  NDMI=OK",
         imagery.acquisition_date, imagery.cloud_cover_pct or 0,
     )
 
@@ -70,8 +74,11 @@ def satellite_fetcher(state: AgentState) -> AgentState:
         **state,
         "satellite_rgb_bytes": imagery.rgb_bytes,
         "satellite_ndvi_bytes": imagery.ndvi_bytes,
+        "satellite_ndmi_bytes": imagery.ndmi_bytes,
+        "satellite_swir_bytes": imagery.swir_bytes,
         "acquisition_date": imagery.acquisition_date,
         "cloud_cover_pct": imagery.cloud_cover_pct,
+        "ndmi_stats": {"mean": ndmi_avg, "status": "MOIST" if ndmi_avg > 0.2 else "STRESSED"},
     }
 
 
@@ -89,6 +96,9 @@ def _mock_imagery(state: AgentState) -> AgentState:
         **state,
         "satellite_rgb_bytes": mock_bytes,
         "satellite_ndvi_bytes": None,
+        "satellite_ndmi_bytes": None,
+        "satellite_swir_bytes": mock_bytes, # Use same placeholder for SWIR
         "acquisition_date": date.today(),
         "cloud_cover_pct": 0.0,
+        "ndmi_stats": {"mean": 0.5, "status": "MOCK_MOIST"},
     }

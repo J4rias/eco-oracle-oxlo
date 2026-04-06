@@ -122,7 +122,7 @@ class SupabaseService:
             "input": text
         }
         try:
-            with httpx.Client(timeout=10.0) as client:
+            with httpx.Client(timeout=60.0) as client:
                 res = client.post(url, headers=headers, json=payload)
                 res.raise_for_status()
                 data = res.json()
