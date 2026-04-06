@@ -38,10 +38,10 @@ def vision_analyzer(state: AgentState) -> AgentState:
         vision_report = client.analyze_mock(image_bytes=rgb_bytes)
 
     # ── Business Rule: confidence threshold ───────────────────────────────────
-    requires_review = vision_report.max_confidence < settings.confidence_threshold
+    requires_review = vision_report.deforestation_detected and (vision_report.max_confidence < settings.confidence_threshold)
     if requires_review:
         logger.warning(
-            "[vision_analyzer] Low confidence (%.2f < %.2f) — flagging REQUIRES_HUMAN_REVIEW",
+            "[vision_analyzer] Deforestation detected with Low confidence (%.2f < %.2f) — flagging REQUIRES_HUMAN_REVIEW",
             vision_report.max_confidence, settings.confidence_threshold,
         )
     else:

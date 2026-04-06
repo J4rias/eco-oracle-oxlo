@@ -24,7 +24,7 @@ def main():
 
     # Emulated audit metadata (Coffee)
     metadata = {
-        "crop_type": "Café",
+        "crop_type": "Coffee",
         "harvest_date": "2024-05-15",
         "invoice_id": "INV-E2E-TEST",
         "reported_tons": 12.5
