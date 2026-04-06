@@ -59,7 +59,7 @@ export function InputSection({ onSubmit }: InputSectionProps) {
             onDrop={(files) => setFile(files[0])}
             onReject={() => setFile(null)}
             maxSize={5 * 1024 ** 2}
-            accept={['application/geo+json', 'application/json']}
+            accept={{ 'application/json': ['.json', '.geojson'], 'application/geo+json': ['.geojson'] }}
             style={{ height: '100%', minHeight: 250, display: 'flex', justifyContent: 'center', alignItems: 'center' }}
             bg={file ? 'var(--mantine-color-teal-light)' : undefined}
           >

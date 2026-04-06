@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { Container, Title, Text, Paper, Transition, Flex, Loader, Center } from '@mantine/core';
+import { Container, Text, Paper, Transition, Flex } from '@mantine/core';
 import { Toaster, toast } from 'sonner';
 import { InputSection } from './components/InputSection';
 import { AnalysisDashboard } from './components/AnalysisDashboard';
+import { AnalysisLoader } from './components/AnalysisLoader';
 import { useMutation } from '@tanstack/react-query';
 
 export function App() {
   const [report, setReport] = useState<any>(null);
   const [geojsonData, setGeojsonData] = useState<any>(null);
+  const [activeStage, setActiveStage] = useState<string | null>(null);
   
   // API Call Mutation
   const analyzeMutation = useMutation({
@@ -16,22 +18,47 @@ export function App() {
         method: 'POST',
         body: formData,
       });
-      if (!response.ok) {
-        let errMsg = `Server returned ${response.status}`;
-        try {
-          const errData = await response.json();
-          if (errData.detail) errMsg = typeof errData.detail === 'string' ? errData.detail : JSON.stringify(errData.detail);
-          else if (errData.error) errMsg = errData.error;
-        } catch(e) {}
-        throw new Error(errMsg);
+
+      if (!response.ok) throw new Error(`Server returned ${response.status}`);
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let finalData = null;
+
+      while (reader) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const event = JSON.parse(line.replace('data: ', ''));
+              if (event.type === 'stage') {
+                setActiveStage(event.node);
+              } else if (event.type === 'final') {
+                finalData = event.data;
+              } else if (event.type === 'error') {
+                throw new Error(event.detail);
+              }
+            } catch (e) {
+              console.error("Error parsing stream chunk", e);
+            }
+          }
+        }
       }
-      return response.json();
+      return finalData;
     },
     onSuccess: (data) => {
+      console.log('[EcoOracle] Final report payload:', JSON.stringify(data, null, 2));
       setReport(data);
+      setActiveStage(null);
       toast.success('Compliance analysis completed successfully.');
     },
     onError: (error) => {
+      setActiveStage(null);
       toast.error(`Analysis failed: ${error.message}`);
     }
   });
@@ -76,15 +103,11 @@ export function App() {
 
             {analyzeMutation.isPending && (
               <Paper p="xl" radius="md" style={{ background: 'rgba(255, 255, 255, 0.05)', backdropFilter: 'blur(10px)' }}>
-                <Center style={{ height: '300px', flexDirection: 'column', gap: '1rem' }}>
-                  <Loader size="xl" type="bars" color="teal" />
-                  <Title order={3}>Running EcoOracle AI Pipeline...</Title>
-                  <Text color="dimmed">Fetching Sentinel-2 Imagery and applying DeepSeek legal reasoning.</Text>
-                </Center>
+                <AnalysisLoader activeStage={activeStage} />
               </Paper>
             )}
 
-            {report && (
+            {report && report?.report?.legal_rationale && (
               <Transition mounted={!!report} transition="slide-up" duration={500}>
                 {(styles) => (
                   <div style={styles}>

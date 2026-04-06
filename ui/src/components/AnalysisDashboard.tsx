@@ -22,7 +22,7 @@ export function AnalysisDashboard({ report, geojson, onReset }: AnalysisDashboar
     }
   };
 
-  const visuals = getVerdictVisuals(report.report.verdict);
+  const visuals = getVerdictVisuals(report?.report?.verdict || 'REQUIRES_HUMAN_REVIEW');
   const VerdictIcon = visuals.icon;
 
   // Calculate center of polygon roughly (Leaflet expects LatLng)
@@ -66,14 +66,14 @@ export function AnalysisDashboard({ report, geojson, onReset }: AnalysisDashboar
                    <Stack align="center" gap="xs">
                      <IconMapPin size={48} color="var(--mantine-color-dimmed)" />
                      <Text c="dimmed">Polygon Map Layer Data</Text>
-                     <Text size="xs" c="dimmed">{report.report.polygon_area_ha?.toFixed(2)} Hectares</Text>
+                     <Text size="xs" c="dimmed">{(report?.report?.polygon_area_ha || 0).toFixed(2)} Hectares</Text>
                    </Stack>
                 </div>
             )}
           </Card.Section>
           <Group justify="space-between" mt="md" mb="xs">
             <Text fw={500}>EUDR Audit Hash</Text>
-            <Badge color="pink" variant="light">{report.audit_hash.substring(0, 16)}...</Badge>
+            <Badge color="pink" variant="light">{(report?.audit_hash || 'PENDING-HASH').substring(0, 16)}...</Badge>
           </Group>
           <Text size="sm" c="dimmed">
             This compliance record has been immutably written to the Supabase log database.
@@ -87,10 +87,10 @@ export function AnalysisDashboard({ report, geojson, onReset }: AnalysisDashboar
                size={180}
                thickness={16}
                roundCaps
-               sections={[{ value: report.report.risk_score, color: visuals.color }]}
+               sections={[{ value: report?.report?.risk_score || 0, color: visuals.color }]}
                label={
                  <Text c={visuals.color} fw={700} ta="center" size="xl">
-                   {report.report.risk_score}%
+                   {report?.report?.risk_score || 0}%
                  </Text>
                }
              />
@@ -153,7 +153,7 @@ export function AnalysisDashboard({ report, geojson, onReset }: AnalysisDashboar
                 ol: (props) => <ol style={{ paddingLeft: '1rem', marginTop: 0, textAlign: 'justify' }} {...props} />,
               }}
             >
-               {report.report.legal_rationale?.detailed_rationale?.replace(/```markdown\n?/g, '').replace(/```/g, '') || ''}
+               {report?.report?.legal_rationale?.detailed_rationale?.replace(/```markdown\n?/g, '').replace(/```/g, '') || ''}
             </ReactMarkdown>
           </Box>
 

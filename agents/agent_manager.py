@@ -45,24 +45,51 @@ _checkpointer = MemorySaver()
 _graph = _build_graph().compile(checkpointer=_checkpointer)
 
 
+async def stream_compliance_check(
+    raw_geojson: dict[str, Any],
+    metadata: FarmMetadata,
+    thread_id: str | None = None,
+):
+    """
+    Execute the full EcoOracle compliance pipeline as an async stream of events.
+    Yields JSON-serializable dictionaries for each completed node.
+    """
+    import uuid
+    thread_id = thread_id or str(uuid.uuid4())
+    config = {"configurable": {"thread_id": thread_id}}
+
+    initial_state: AgentState = {
+        "raw_geojson": raw_geojson,
+        "metadata": metadata,
+        "requires_human_review": False,
+        "audit_stored": False,
+        "rag_context": [],
+    }
+
+    logger.info("[agent_manager] Starting streaming compliance run (thread_id=%s)", thread_id)
+    
+    async for event in _graph.astream(initial_state, config=config):
+        # LangGraph dynamic event structure: {"node_name": {state_updates...}}
+        node_name = list(event.keys())[0]
+        state_updates = event[node_name]
+        
+        yield {"type": "stage", "node": node_name}
+        
+        if node_name == "audit_finalizer":
+            final_response = state_updates.get("final_response")
+            if final_response and hasattr(final_response, "model_dump"):
+                yield {"type": "final", "data": final_response.model_dump(mode="json")}
+            else:
+                yield {"type": "final", "data": final_response}
+
+
 def run_compliance_check(
     raw_geojson: dict[str, Any],
     metadata: FarmMetadata,
     thread_id: str | None = None,
 ) -> AgentState:
     """
-    Execute the full EcoOracle compliance pipeline.
-
-    Args:
-        raw_geojson: Parsed GeoJSON dict (Feature or FeatureCollection).
-        metadata: Validated FarmMetadata (crop type, harvest date, invoice).
-        thread_id: Optional LangGraph thread ID for checkpoint resumption.
-
-    Returns:
-        Final AgentState containing `final_response` (ComplianceResponse).
-
-    Raises:
-        Any domain exception from the individual nodes.
+    Execute the full EcoOracle compliance pipeline (Legacy Blocking Version).
     """
     import uuid
 

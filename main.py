@@ -9,9 +9,9 @@ from typing import Annotated
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, StreamingResponse
 
-from agents.agent_manager import run_compliance_check
+from agents.agent_manager import run_compliance_check, stream_compliance_check
 from core.config import settings
 from core.exceptions import (
     EcoOracleError,
@@ -175,27 +175,24 @@ async def analyze_compliance(
             detail=f"Could not parse GeoJSON file: {exc}",
         )
 
-    # ── Run agent ──────────────────────────────────────────────────────────────
+    # ── Run agent (Streaming) ──────────────────────────────────────────────────
     logger.info(
-        "Compliance request: invoice=%s crop=%s tons=%s",
+        "Compliance request (STREAM): invoice=%s crop=%s tons=%s",
         farm_metadata.invoice_id,
         farm_metadata.crop_type.value,
         farm_metadata.reported_tons,
     )
 
-    final_state = run_compliance_check(
-        raw_geojson=raw_geojson,
-        metadata=farm_metadata,
-    )
+    async def event_generator():
+        try:
+            async for event in stream_compliance_check(raw_geojson=raw_geojson, metadata=farm_metadata):
+                yield f"data: {json.dumps(event, default=str)}\n\n"
+        except Exception as exc:
+            logger.exception("Error in event stream")
+            error_event = {"type": "error", "detail": str(exc)}
+            yield f"data: {json.dumps(error_event)}\n\n"
 
-    response = final_state.get("final_response")
-    if not response:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Agent completed without producing a final response",
-        )
-
-    return response
+    return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 
 @app.get(
