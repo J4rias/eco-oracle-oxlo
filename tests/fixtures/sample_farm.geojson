@@ -1,0 +1,25 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Finca La Esperanza",
+        "country": "Colombia",
+        "region": "Huila"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.0523, 1.9876],
+            [-76.0423, 1.9876],
+            [-76.0423, 1.9776],
+            [-76.0523, 1.9776],
+            [-76.0523, 1.9876]
+          ]
+        ]
+      }
+    }
+  ]
+}
