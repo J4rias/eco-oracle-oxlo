@@ -13,16 +13,16 @@ from services.supabase_client import SupabaseService
 
 logger = logging.getLogger(__name__)
 
-# Estimated coffee productivity for volume coherence check (t/ha)
+# Estimated crop productivity for volume coherence check (t/ha)
 _PRODUCTIVITY_ESTIMATES: dict[str, tuple[float, float]] = {
-    "Café":            (0.3, 1.5),   # (min, max) t/ha
-    "Cacao":           (0.2, 1.0),
+    "Coffee":          (0.3, 1.5),   # (min, max) t/ha
+    "Cocoa":           (0.2, 1.0),
     "Soya":            (1.5, 4.0),
-    "Aceite de Palma": (2.0, 6.0),
-    "Carne de Res":    (0.05, 0.3),
-    "Madera":          (0.5, 5.0),
-    "Caucho":          (0.5, 2.0),
-    "Otro":            (0.1, 10.0),
+    "Palm Oil":        (2.0, 6.0),
+    "Beef":            (0.05, 0.3),
+    "Wood":            (0.5, 5.0),
+    "Rubber":          (0.5, 2.0),
+    "Other":           (0.1, 10.0),
 }
 
 _SYSTEM_PROMPT = (

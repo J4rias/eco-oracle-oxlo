@@ -9,14 +9,14 @@ from pydantic import BaseModel, Field, field_validator
 
 
 class CropType(str, Enum):
-    COFFEE = "Café"
-    COCOA = "Cacao"
+    COFFEE = "Coffee"
+    COCOA = "Cocoa"
     SOYA = "Soya"
-    PALM_OIL = "Aceite de Palma"
-    BEEF = "Carne de Res"
-    WOOD = "Madera"
-    RUBBER = "Caucho"
-    OTHER = "Otro"
+    PALM_OIL = "Palm Oil"
+    BEEF = "Beef"
+    WOOD = "Wood"
+    RUBBER = "Rubber"
+    OTHER = "Other"
 
 
 class FarmMetadata(BaseModel):
@@ -28,7 +28,7 @@ class FarmMetadata(BaseModel):
     reported_tons: float = Field(..., gt=0, description="Volume declared in the invoice (metric tons)")
 
     model_config = {"json_schema_extra": {"example": {
-        "crop_type": "Café",
+        "crop_type": "Coffee",
         "harvest_date": "2024-06-15",
         "invoice_id": "INV-2024-00123",
         "reported_tons": 12.5,
