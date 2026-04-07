@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import { Container, Paper, Title, Text, Badge, Group, Stack, Loader, Center, Box, Divider } from '@mantine/core';
 import { IconCheck, IconX, IconShieldCheck, IconAlertTriangle, IconLeaf } from '@tabler/icons-react';
 
+import { API_BASE_URL } from '../config';
+
 interface VerificationData {
   verified: boolean;
   audit_hash: string;
@@ -28,7 +30,7 @@ export function VerificationPage() {
   useEffect(() => {
     if (!hash) return;
 
-    fetch(`http://localhost:8000/api/v1/compliance/verify/${hash}`)
+    fetch(`${API_BASE_URL}/api/v1/compliance/verify/${hash}`)
       .then(async (res) => {
         if (!res.ok) {
           const err = await res.json();
