@@ -39,7 +39,7 @@ class Settings(BaseSettings):
 
     # ── Supabase ──────────────────────────────────────────────────────────────
     supabase_url: str = Field(default="")
-    supabase_anon_key: str = Field(default="")
+    supabase_service_role_key: str = Field(default="", description="Service role key for server-side persistence")
 
     # ── Derived helpers ───────────────────────────────────────────────────────
     @property
@@ -48,7 +48,7 @@ class Settings(BaseSettings):
 
     @property
     def supabase_configured(self) -> bool:
-        return bool(self.supabase_url and self.supabase_anon_key)
+        return bool(self.supabase_url and self.supabase_service_role_key)
 
     @property
     def oxlo_configured(self) -> bool:

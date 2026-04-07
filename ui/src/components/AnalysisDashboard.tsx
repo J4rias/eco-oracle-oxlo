@@ -62,7 +62,8 @@ export function AnalysisDashboard({ report, geojson, onReset }: AnalysisDashboar
     if (!auditHash) return;
     setIsDownloading(true);
     try {
-      const res = await fetch(`http://localhost:8000/api/v1/compliance/certificate/${auditHash}`);
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const res = await fetch(`${baseUrl}/api/v1/compliance/certificate/${auditHash}`);
       if (!res.ok) throw new Error('Certificate not available. Please run analysis first.');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

@@ -24,13 +24,13 @@ class SupabaseService:
             try:
                 from supabase import create_client  # type: ignore
 
-                self._client = create_client(settings.supabase_url, settings.supabase_anon_key)
+                self._client = create_client(settings.supabase_url, settings.supabase_service_role_key)
                 logger.info("Supabase client initialised successfully.")
             except Exception as exc:
                 logger.warning("Could not initialise Supabase client: %s. Running in mock mode.", exc)
         else:
             logger.warning(
-                "SUPABASE_URL / SUPABASE_ANON_KEY not set. "
+                "SUPABASE_URL / SUPABASE_SERVICE_ROLE_KEY not set. "
                 "Audit records will be written locally to %s",
                 _MOCK_LOG,
             )

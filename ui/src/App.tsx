@@ -15,7 +15,8 @@ export function App() {
   // API Call Mutation
   const analyzeMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch('http://localhost:8000/api/v1/compliance/analyze', {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${baseUrl}/api/v1/compliance/analyze`, {
         method: 'POST',
         body: formData,
       });
