@@ -192,7 +192,15 @@ async def analyze_compliance(
             error_event = {"type": "error", "detail": str(exc)}
             yield f"data: {json.dumps(error_event)}\n\n"
 
-    return StreamingResponse(event_generator(), media_type="text/event-stream")
+    return StreamingResponse(
+        event_generator(), 
+        media_type="text/event-stream",
+        headers={
+            "X-Accel-Buffering": "no",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive"
+        }
+    )
 
 
 @app.get(

@@ -28,24 +28,22 @@ export function App() {
       const decoder = new TextDecoder();
       let finalData = null;
       let buffer = '';
-
       while (reader) {
         const { done, value } = await reader.read();
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });
         
-        // SSE standard uses \n\n as event delimiter
-        const events = buffer.split('\n\n');
-        
-        // Keep the last partial event in the buffer
-        buffer = events.pop() || '';
-
-        for (const eventRaw of events) {
-          const line = eventRaw.trim();
-          if (line.startsWith('data: ')) {
+        let boundary = buffer.indexOf('\n\n');
+        while (boundary !== -1) {
+          const completeEvent = buffer.slice(0, boundary).trim();
+          buffer = buffer.slice(boundary + 2);
+          
+          if (completeEvent.startsWith('data: ')) {
             try {
-              const event = JSON.parse(line.replace('data: ', ''));
+              const cleanedJson = completeEvent.replace(/^data:\s*/, '');
+              const event = JSON.parse(cleanedJson);
+              
               if (event.type === 'node_start') {
                 setActiveStage(event.node);
               } else if (event.type === 'final') {
@@ -54,9 +52,10 @@ export function App() {
                 throw new Error(event.detail);
               }
             } catch (e) {
-              console.error("Error parsing complete SSE event", e, "Raw data:", line);
+              console.warn("Partial JSON ignored via stream:", e);
             }
           }
+          boundary = buffer.indexOf('\n\n');
         }
       }
       return finalData;

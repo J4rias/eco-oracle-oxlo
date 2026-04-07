@@ -73,7 +73,7 @@ async def stream_compliance_check(
         node_name = list(event.keys())[0]
         state_updates = event[node_name]
         
-        yield {"type": "stage", "node": node_name}
+        yield {"type": "node_start", "node": node_name}
         
         if node_name == "audit_finalizer":
             final_response = state_updates.get("final_response")
