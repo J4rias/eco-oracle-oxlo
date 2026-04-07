@@ -27,19 +27,26 @@ export function App() {
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
       let finalData = null;
+      let buffer = '';
 
       while (reader) {
         const { done, value } = await reader.read();
         if (done) break;
 
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
+        buffer += decoder.decode(value, { stream: true });
+        
+        // SSE standard uses \n\n as event delimiter
+        const events = buffer.split('\n\n');
+        
+        // Keep the last partial event in the buffer
+        buffer = events.pop() || '';
 
-        for (const line of lines) {
+        for (const eventRaw of events) {
+          const line = eventRaw.trim();
           if (line.startsWith('data: ')) {
             try {
               const event = JSON.parse(line.replace('data: ', ''));
-              if (event.type === 'stage') {
+              if (event.type === 'node_start') {
                 setActiveStage(event.node);
               } else if (event.type === 'final') {
                 finalData = event.data;
@@ -47,7 +54,7 @@ export function App() {
                 throw new Error(event.detail);
               }
             } catch (e) {
-              console.error("Error parsing stream chunk", e);
+              console.error("Error parsing complete SSE event", e, "Raw data:", line);
             }
           }
         }
