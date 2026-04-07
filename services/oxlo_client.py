@@ -187,7 +187,8 @@ class OxloReasoningClient:
         
         self.openai_client = openai.OpenAI(
             base_url=self._base,
-            api_key=settings.oxlo_api_key
+            api_key=settings.oxlo_api_key,
+            timeout=180.0 # DeepSeek R1 reasoning is slow (CoT); we allow 3 mins.
         )
 
     def reason(self, prompt: str, system_prompt: str = "") -> str:
@@ -207,14 +208,21 @@ class OxloReasoningClient:
         messages.append({"role": "user", "content": prompt})
 
         try:
-            response = self.openai_client.chat.completions.create(
+            response_stream = self.openai_client.chat.completions.create(
                 model=settings.oxlo_reasoning_model,
                 messages=messages,
                 temperature=0.1,
                 max_tokens=2048,
-                top_p=0.95
+                top_p=0.95,
+                stream=True # Use streaming to prevent gateway 504 timeouts
             )
-            return response.choices[0].message.content
+            
+            full_content = ""
+            for chunk in response_stream:
+                if chunk.choices and chunk.choices[0].delta.content:
+                    full_content += chunk.choices[0].delta.content
+            
+            return full_content
 
         except openai.RateLimitError:
             logger.warning("Oxlo Reasoning API returned 429 — rate limit exceeded.")

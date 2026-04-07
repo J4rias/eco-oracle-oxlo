@@ -89,8 +89,8 @@ def legal_reasoner(state: AgentState) -> AgentState:
     rag_query = (
         f"EUDR compliance deforestation {metadata.crop_type.value} {earliest_deforestation} cutoff 2020"
     )
-    rag_context = supabase.rag_search(query=rag_query)
-    logger.info("[legal_reasoner] Retrieved %d RAG chunks", len(rag_context))
+    rag_context = supabase.rag_search(query=rag_query)[:3] # Top 3 only to avoid token bloat
+    logger.info("[legal_reasoner] Retrieved %d RAG chunks (limited to 3)", len(rag_context))
 
     # ── Build prompt ───────────────────────────────────────────────────────────
     prompt = _build_prompt(
@@ -103,6 +103,7 @@ def legal_reasoner(state: AgentState) -> AgentState:
         requires_review=state.get("requires_human_review", False),
         ndmi_stats=state.get("ndmi_stats"),
     )
+    logger.info("[legal_reasoner] Generated prompt size: %d chars", len(prompt))
 
     # ── Call DeepSeek R1 ───────────────────────────────────────────────────────
     client = OxloReasoningClient()
