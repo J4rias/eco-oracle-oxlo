@@ -12,6 +12,7 @@ class ComplianceVerdict(str, Enum):
     PASS = "PASS"
     FAIL = "FAIL"
     REQUIRES_HUMAN_REVIEW = "REQUIRES_HUMAN_REVIEW"
+    REJECTED_URBAN_AREA = "REJECTED_URBAN_AREA"
 
 
 class DeforestationDetection(BaseModel):
@@ -30,6 +31,7 @@ class VisionReport(BaseModel):
     model: str
     detections: list[DeforestationDetection] = Field(default_factory=list)
     deforestation_detected: bool = False
+    urban_detected: bool = False
     earliest_deforestation_date: Optional[date] = None
     max_confidence: float = 0.0
     raw_response: dict = Field(default_factory=dict)

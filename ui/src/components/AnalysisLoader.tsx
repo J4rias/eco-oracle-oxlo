@@ -127,7 +127,7 @@ export function AnalysisLoader({ activeStage }: AnalysisLoaderProps) {
           />
         </motion.div>
       </Box>
-      <Text size="sm" c="teal.4" fw={500} ta="center" h={20}>
+      <Text component="div" size="sm" c="teal.4" fw={500} ta="center" h={20}>
         <AnimatePresence mode="wait">
           <motion.div
             key={`${activeStage}-${subIndex}`}

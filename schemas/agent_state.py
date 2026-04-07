@@ -30,6 +30,7 @@ class AgentState(TypedDict, total=False):
     # ── Vision stage ──────────────────────────────────────────────────────────
     vision_report: Optional[VisionReport]
     requires_human_review: bool           # Set True if max_confidence < threshold
+    urban_detected: bool                  # Set True if YOLOv9 sees urban/buildings
 
     # ── Legal reasoning stage ─────────────────────────────────────────────────
     rag_context: list[str]                # EUDR law chunks from pgvector

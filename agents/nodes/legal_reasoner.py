@@ -114,8 +114,18 @@ def legal_reasoner(state: AgentState) -> AgentState:
 
     # ── Determine verdict ──────────────────────────────────────────────────────
     requires_review = state.get("requires_human_review", False)
+    urban_detected = state.get("urban_detected", False)
 
-    if post_cutoff_deforestation:
+    if urban_detected:
+        verdict = ComplianceVerdict.REJECTED_URBAN_AREA
+        risk_score = 100
+        raw_rationale = (
+            "🚨 **REJECTED: URBAN AREA DETECTED**\n\n"
+            "The Geo-Spatial analysis has identified buildings, infrastructure, or a high-density "
+            "urban footprint in the submitted area. EUDR compliance auditing is **only applicable "
+            "to agricultural or forest plots**. This sample cannot be validated as a farm plot."
+        )
+    elif post_cutoff_deforestation:
         verdict = ComplianceVerdict.FAIL
         risk_score = 95
     elif requires_review:
@@ -131,6 +141,9 @@ def legal_reasoner(state: AgentState) -> AgentState:
     # Penalise for volume incoherence
     if not volume_ok:
         risk_score = min(risk_score + 15, 100)
+        # If the farm was going to pass but has a volume discrepancy, refer it to review
+        if verdict == ComplianceVerdict.PASS:
+            verdict = ComplianceVerdict.REQUIRES_HUMAN_REVIEW
 
     legal_rationale = LegalRationale(
         model=settings.oxlo_reasoning_model,

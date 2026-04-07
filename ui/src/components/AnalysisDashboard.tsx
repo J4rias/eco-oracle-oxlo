@@ -28,6 +28,11 @@ export function AnalysisDashboard({ report, geojson, onReset }: AnalysisDashboar
       description: 'Some anomalies detected requiring attention. Manual review is recommended before export clearance.',
       ringColor: 'yellow',
     };
+    if (score === 100 && report.report.verdict === 'REJECTED_URBAN_AREA') return {
+      label: 'URBAN REJECTION', color: 'dark', icon: IconMapPin,
+      description: 'The area analyzed is identified as a high-density urban or industrial center. Geo-spatial auditing for EUDR is only valid for forest or agricultural land.',
+      ringColor: 'dark',
+    };
     return {
       label: 'CRITICAL RISK', color: 'red', icon: IconAlertOctagon,
       description: 'Significant deforestation or compliance violations detected. EU market access may be blocked.',
@@ -40,6 +45,7 @@ export function AnalysisDashboard({ report, geojson, onReset }: AnalysisDashboar
     switch(verdict) {
       case 'PASS': return { color: 'green', icon: IconCheck, label: 'COMPLIANT' };
       case 'FAIL': return { color: 'red', icon: IconX, label: 'NON-COMPLIANT' };
+      case 'REJECTED_URBAN_AREA': return { color: 'dark', icon: IconMapPin, label: 'INVALID: URBAN AREA' };
       default: return { color: 'yellow', icon: IconAlertTriangle, label: 'REQUIRES REVIEW' };
     }
   };

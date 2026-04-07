@@ -4,17 +4,17 @@
     {
       "type": "Feature",
       "properties": {
-        "name": "Cooperative Daloa - Ivory Coast"
+        "name": "Bogota City Center - Plaza de Bolivar"
       },
       "geometry": {
         "type": "Polygon",
         "coordinates": [
           [
-            [-6.350, 6.950],
-            [-6.347, 6.950],
-            [-6.347, 6.953],
-            [-6.350, 6.953],
-            [-6.350, 6.950]
+            [-74.077, 4.602],
+            [-74.074, 4.602],
+            [-74.074, 4.605],
+            [-74.077, 4.605],
+            [-74.077, 4.602]
           ]
         ]
       }

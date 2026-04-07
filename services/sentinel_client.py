@@ -140,11 +140,18 @@ class SentinelHubService:
         try:
             best_scene = self._find_best_scene(bbox_coords, time_range)
             if best_scene is None:
-                raise SatelliteFetchError(
-                    f"No Sentinel-2 scenes with <{settings.max_cloud_cover_pct}% cloud cover "
-                    f"found in the date range {time_range}",
-                    {"bbox": bbox_coords, "time_range": time_range},
+                logger.warning(
+                    "No scenes found with strict <%d%% cloud cover in %s. "
+                    "Falling back to lax threshold (100%%) to guarantee extraction.",
+                    settings.max_cloud_cover_pct, time_range
                 )
+                best_scene = self._find_best_scene(bbox_coords, time_range, max_cloud_cover=100.0)
+                
+                if best_scene is None:
+                    raise SatelliteFetchError(
+                        f"No Sentinel-2 scenes found AT ALL in the date range {time_range}",
+                        {"bbox": bbox_coords, "time_range": time_range},
+                    )
 
             scene_date = best_scene.get("properties", {}).get("datetime", "")[:10]
             cloud_cover = best_scene.get("properties", {}).get("eo:cloud_cover")
@@ -194,8 +201,10 @@ class SentinelHubService:
         self,
         bbox_coords: list[float],
         time_range: tuple[str, str],
+        max_cloud_cover: float | None = None,
     ) -> dict | None:
         """Search catalog for the lowest-cloud scene. Retries on 429."""
+        limit = max_cloud_cover if max_cloud_cover is not None else settings.max_cloud_cover_pct
         try:
             catalog = SentinelHubCatalog(config=self._config)
             bbox = BBox(bbox=bbox_coords, crs=CRS.WGS84)
@@ -205,7 +214,7 @@ class SentinelHubService:
                     collection=DataCollection.SENTINEL2_L2A,
                     bbox=bbox,
                     time=(time_range[0], time_range[1]),
-                    filter=f"eo:cloud_cover < {settings.max_cloud_cover_pct}",
+                    filter=f"eo:cloud_cover < {limit}",
                     fields={"include": ["id", "properties.datetime", "properties.eo:cloud_cover"]},
                 )
             )

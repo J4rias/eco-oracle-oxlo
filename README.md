@@ -124,6 +124,7 @@ flowchart LR
     classDef pass fill:#e6fcf5,stroke:#20c997,stroke-width:2px,color:#087f5b;
     classDef fail fill:#ffe3e3,stroke:#ff8787,stroke-width:2px,color:#c92a2a;
     classDef review fill:#fff9db,stroke:#fcc419,stroke-width:2px,color:#e67700;
+    classDef reject fill:#e9ecef,stroke:#343a40,stroke-width:2px,color:#212529;
     classDef data fill:#f8f9fa,stroke:#ced4da,stroke-width:1px;
 
     subgraph Input [Inputs]
@@ -150,6 +151,7 @@ flowchart LR
     SWIR --> YOLO
     RGB --> YOLO
     YOLO -- "Detection Report" --> DS
+    YOLO -- "Urban Footprint" --> DS
     NDVI -- "Biomass Index" --> DS
     NDMI -- "Moisture Stress" --> DS
 
@@ -161,6 +163,7 @@ flowchart LR
     VERDICT -->|Score 0-30| PASS["✅ PASS — Certificate Issued"]:::pass
     VERDICT -->|Score 31-70| REVIEW["⚠️ REQUIRES HUMAN REVIEW"]:::review
     VERDICT -->|Score 71-100| FAIL["❌ FAIL — Red Flagged"]:::fail
+    VERDICT -->|No Crops| REJECT["📍 REJECTED — URBAN AREA"]:::reject
 ```
 
 ---
@@ -325,6 +328,16 @@ To test the EcoOracle pipeline with realistic scenarios, three GeoJSON files rep
   - **Reported Volume:** `150.0` Metric Tons
   - **Invoice ID:** `INV-PALM-2026-X12`
 - **Expected Result:** The vision neural engine detects clear-cutting land-use change post-2020. The legal reasoner classifies this as a strict violation of EUDR Article 3.1, denying market access.
+
+### 📍 REJECTED: URBAN AREA
+- **File:** `examples/urban_rejected_bogota.geojson`
+- **Location:** Bogota Center (Plaza de Bolivar), Colombia
+- **Crop:** Other
+- **Parameters:**
+  - **Harvest Date:** `2026-03-01`
+  - **Reported Volume:** `10.0` Metric Tons
+  - **Invoice ID:** `INV-URBAN-BOGOTA`
+- **Expected Result:** The vision analyzer detects high-density urban infrastructure (buildings, roads). The pipeline triggers a `REJECTED_URBAN_AREA` verdict, as EUDR auditing is restricted to agricultural and forestry land only.
 
 ---
 
