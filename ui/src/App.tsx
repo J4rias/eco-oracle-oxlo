@@ -7,6 +7,8 @@ import { AnalysisDashboard } from './components/AnalysisDashboard';
 import { AnalysisLoader } from './components/AnalysisLoader';
 import { useMutation } from '@tanstack/react-query';
 
+import { API_BASE_URL } from './config';
+
 export function App() {
   const [report, setReport] = useState<any>(null);
   const [geojsonData, setGeojsonData] = useState<any>(null);
@@ -15,8 +17,7 @@ export function App() {
   // API Call Mutation
   const analyzeMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const response = await fetch(`${baseUrl}/api/v1/compliance/analyze`, {
+      const response = await fetch(`${API_BASE_URL}/api/v1/compliance/analyze`, {
         method: 'POST',
         body: formData,
       });

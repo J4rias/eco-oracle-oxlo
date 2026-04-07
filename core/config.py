@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     # ── App ───────────────────────────────────────────────────────────────────
     app_env: str = Field(default="development")
     log_level: str = Field(default="INFO")
-    app_public_url: str = Field(default="http://localhost:5173", description="Base URL for QR code in PDF certificates")
+    app_public_url: str = Field(default="", description="Base URL for QR code in PDF certificates")
 
     # ── Business Rules ────────────────────────────────────────────────────────
     confidence_threshold: float = Field(default=0.7, ge=0.0, le=1.0)

@@ -7,6 +7,8 @@ import ReactMarkdown from 'react-markdown';
 import { MapContainer, TileLayer, Polygon, LayersControl, ImageOverlay } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 
+import { API_BASE_URL } from '../config';
+
 interface AnalysisDashboardProps {
   report: any; // Ideally typed to ComplianceResponse
   geojson?: any;
@@ -62,8 +64,7 @@ export function AnalysisDashboard({ report, geojson, onReset }: AnalysisDashboar
     if (!auditHash) return;
     setIsDownloading(true);
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-      const res = await fetch(`${baseUrl}/api/v1/compliance/certificate/${auditHash}`);
+      const res = await fetch(`${API_BASE_URL}/api/v1/compliance/certificate/${auditHash}`);
       if (!res.ok) throw new Error('Certificate not available. Please run analysis first.');
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);

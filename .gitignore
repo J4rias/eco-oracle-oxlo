@@ -80,3 +80,9 @@ audit_log_mock.jsonl
 
 # MacOS
 .DS_Store
+
+# Docker & Deployment
+Dockerfile
+docker-compose.yml
+ui/Dockerfile
+ui/nginx.conf
