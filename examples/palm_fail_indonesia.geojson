@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Pekanbaru Palm Estate - Indonesia"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [101.440, 0.500],
+            [101.430, 0.500],
+            [101.430, 0.510],
+            [101.440, 0.510],
+            [101.440, 0.500]
+          ]
+        ]
+      }
+    }
+  ]
+}

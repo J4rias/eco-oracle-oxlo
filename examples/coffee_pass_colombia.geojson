@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Finca Buenavista - Pitalito"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-76.050, 1.850],
+            [-76.047, 1.850],
+            [-76.047, 1.853],
+            [-76.050, 1.853],
+            [-76.050, 1.850]
+          ]
+        ]
+      }
+    }
+  ]
+}

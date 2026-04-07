@@ -1,0 +1,23 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cooperative Daloa - Ivory Coast"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [-6.450, 6.870],
+            [-6.447, 6.870],
+            [-6.447, 6.873],
+            [-6.450, 6.873],
+            [-6.450, 6.870]
+          ]
+        ]
+      }
+    }
+  ]
+}
